@@ -65,6 +65,7 @@ class Qsl_Card {
     const FONT_SIZE_TO_RADIO_MIN_PT =  8.0;
     const FONT_SIZE_HIS_IDO_PT      = 10.0;
     const FONT_SIZE_CONFIRM_PT      = 13.0;
+    const FONT_SIZE_QSL_NUMBER_PT   =  9.0;
     const FONT_SIZE_REPORT_HEADER_PT= 10.0;
     const FONT_SIZE_REPORT_BODY_PT  = 10.0;
     const FONT_SIZE_DATA_SMALL_PT   = 10.0;
@@ -76,6 +77,7 @@ class Qsl_Card {
         $callsign   = 'JB1ABC',
         $to_radio   = 'JB1ABC/1',
         $his_ido    = '',
+        $number     = '',
         $datetime   = 0,
         $rs         = '59',
         $band       = self::BAND_145M,
@@ -110,6 +112,11 @@ class Qsl_Card {
 
     public function setHisIdo($qth) {
         $this->his_ido = $qth;
+        return $this;
+    }
+
+    public function setNumber($number) {
+        $this->number = $number;
         return $this;
     }
 
@@ -274,6 +281,7 @@ class Qsl_Card {
     private function drawFixedTexts() {
         $this->drawToRadioHeading();
         $this->drawConfirmOurQSO();
+        $this->drawQslNumber();
         $this->drawBoxHeader();
         $this->drawDataHeading();
         $this->drawTnx();
@@ -289,6 +297,18 @@ class Qsl_Card {
         $gs = $this->saveGS();
         $this->setFont(self::FONT_SIZE_CONFIRM_PT);
         $this->drawTextLeftBottom('Confirming Our QSO.', self::BOX_LEFT_MM, self::BOX_TOP_MM);
+    }
+
+    private function drawQslNumber() {
+        if($this->number == '') {
+            return;
+        }
+        $gs = $this->saveGS();
+        $this->setFont(self::FONT_SIZE_QSL_NUMBER_PT);
+        $this->drawTextRightBottom(
+            '#' . $this->number,
+            self::BOX_LEFT_MM + self::BOX_WIDTH_MM,
+            self::BOX_TOP_MM);
     }
 
     private function drawBoxHeader() {
@@ -521,6 +541,19 @@ class Qsl_Card {
         $lines = preg_split('/\x0d\x0a|\x0d|\x0a/', $text);
         $top_mm = $bottom_mm - $font_size_mm * count($lines);
         return $this->drawTextCenterMiddle($text, $x_mm, $top_mm, $rect_width_mm, $bottom_mm - $top_mm);
+    }
+
+    private function drawTextRightBottom($text, $x2_mm, $bottom_mm) {
+        $font_size_mm = Qsl_Length_Unit::convert($this->page->getFontSize(), 'pt', 'mm');
+        $baseline_mm  = $font_size_mm * self::BASELINE_POSITION;
+        $lines = preg_split('/\x0d\x0a|\x0d|\x0a/', $text);
+        $top_mm = $bottom_mm - $font_size_mm * count($lines);
+        foreach($lines as $line) {
+            $text_area_width_mm = mb_strlen($line, 'UTF-8') * $font_size_mm / 2; // 半角幅で計算する必要があるので /2
+            $x_mm = $x2_mm - $text_area_width_mm;
+            $this->drawTextLeftTop($line, $x_mm, $top_mm);
+            $top_mm += $font_size_mm;
+        }
     }
 
     private function drawTextCenterMiddle($text, $x1_mm, $y1_mm, $rect_width_mm, $rect_height_mm) {
